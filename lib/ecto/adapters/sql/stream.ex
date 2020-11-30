@@ -19,7 +19,19 @@ defimpl Enumerable, for: Stream do
 
   def reduce(stream, acc, fun) do
     %Stream{meta: meta, statement: statement, params: params, opts: opts} = stream
-    Ecto.Adapters.SQL.reduce(meta, statement, params, opts, acc, fun)
+    {auto_transaction?, opts} = Keyword.pop(opts, :auto_transaction, false)
+
+    if auto_transaction? do
+      {:ok, result} =
+        Ecto.Adapters.SQL.transaction(meta, opts, fn ->
+          IO.puts("transaction")
+          Ecto.Adapters.SQL.reduce(meta, statement, params, opts, acc, fun)
+        end)
+
+      result
+    else
+      Ecto.Adapters.SQL.reduce(meta, statement, params, opts, acc, fun)
+    end
   end
 end
 

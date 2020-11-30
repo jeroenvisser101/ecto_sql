@@ -41,4 +41,19 @@ defmodule Ecto.Integration.StreamTest do
     assert c1.id == cid1
     assert c2.id == cid2
   end
+
+  test "stream with auto_transaction" do
+    %Post{} = TestRepo.insert!(%Post{title: "title1"})
+    %Post{} = TestRepo.insert!(%Post{title: "title2"})
+
+    query = from(p in "posts", order_by: p.title, select: p.title)
+    IO.puts("pre-stream")
+    stream = query
+    |> TestRepo.stream(auto_transaction: true)
+
+    IO.puts("post-stream")
+    assert {:ok, ["title1", "title2"]} =
+      stream
+      |> Enum.to_list()
+  end
 end
